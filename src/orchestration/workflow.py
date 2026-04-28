@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import json
 from typing import Literal, TypeAlias
 from pydantic import BaseModel, Field
 
@@ -33,30 +34,64 @@ class TradingState(BaseModel):
     final_report: str | None = Field(default=None, description="The final synthesized report from the CIO")
 
 
+from src.tools.openbb_fetcher import (
+    get_momentum_indicators,
+    get_volatility_indicators,
+    get_growth_metrics,
+    get_risk_metrics,
+    get_insider_activity,
+    get_short_interest_data,
+    get_analyst_upgrades
+)
+
 async def step_drafting(state: TradingState) -> WorkflowStep:
-    """Step 1: Bull and Bear independently draft their initial theses."""
-    logger.info("Starting Phase: Drafting (Iteration 0)")
+    """Step 1: Bull and Bear independently draft their initial theses with pre-fetched data."""
+    logger.info(f"--- Phase: Drafting (Iteration 0) for {state.context.ticker} ---")
+    
+    ticker = state.context.ticker
+    
+    # Pre-fetch all data to ensure consistency and speed
+    logger.info(f"Pre-fetching data for {ticker}...")
+    data_packet = {
+        "momentum": get_momentum_indicators(ticker),
+        "volatility": get_volatility_indicators(ticker),
+        "growth": get_growth_metrics(ticker),
+        "risk": get_risk_metrics(ticker),
+        "insider": get_insider_activity(ticker),
+        "short_interest": get_short_interest_data(ticker),
+        "analyst_recs": get_analyst_upgrades(ticker)
+    }
     
     bull_agent = create_bull_agent(state.context)
     bear_agent = create_bear_agent(state.context)
     
-    prompt = f"Analyze {state.context.ticker} and generate your initial AnalystThesis based on your persona instructions."
+    data_str = json.dumps(data_packet, indent=2)
+    prompt = f"""
+    Analyze the following pre-fetched data and chart for {ticker}. 
+    Generate your initial AnalystThesis based on your persona instructions.
     
-    # Run analysts concurrently for speed
-    bull_task = bull_agent.run(prompt)
-    bear_task = bear_agent.run(prompt)
+    [MARKET DATA]
+    {data_str}
+    
+    Note: A candlestick chart image has been generated in data/{ticker}_daily_chart.png.
+    """
+    
+    logger.info("Triggering Bull and Bear analysts in parallel...")
+    # Parallel execution using asyncio.gather
+    bull_task = bull_agent.run(prompt, max_iterations=10)
+    bear_task = bear_agent.run(prompt, max_iterations=10)
     
     bull_resp, bear_resp = await asyncio.gather(bull_task, bear_task)
     
-    state.bull_draft = bull_resp.result.text
-    state.bear_draft = bear_resp.result.text
+    state.bull_draft = bull_resp.last_message.text
+    state.bear_draft = bear_resp.last_message.text
     
     logger.info("Drafting complete. Moving to Critique.")
     return "critique"
 
 async def step_critique(state: TradingState) -> WorkflowStep:
     """Step 2: CIO reviews the drafts and acts as the 'Red Team'."""
-    logger.info("Starting Phase: Critique (Iteration 1)")
+    logger.info("--- Phase: Critique (Iteration 1) ---")
     
     cio_agent = create_cio_agent(state.context)
     
@@ -73,8 +108,9 @@ async def step_critique(state: TradingState) -> WorkflowStep:
     and provide explicit feedback for their required revisions. Do NOT output the Final Report yet.
     """
     
-    resp = await cio_agent.run(prompt)
-    state.cio_critique = resp.result.text
+    logger.info("Triggering CIO for critique...")
+    resp = await cio_agent.run(prompt, max_iterations=15)
+    state.cio_critique = resp.last_message.text
     
     logger.info("CIO critique generated. Moving to Revision.")
     return "revision"
@@ -86,36 +122,17 @@ async def step_revision(state: TradingState) -> WorkflowStep:
     bull_agent = create_bull_agent(state.context)
     bear_agent = create_bear_agent(state.context)
     
-    # Force agents to confront the critique
-    bull_prompt = f"""
-    Your original thesis:
-    {state.bull_draft}
+    bull_prompt = f"Your original thesis:\n{state.bull_draft}\n\nCIO Feedback:\n{state.cio_critique}\n\nPlease revise your AnalystThesis."
+    bear_prompt = f"Your original thesis:\n{state.bear_draft}\n\nCIO Feedback:\n{state.cio_critique}\n\nPlease revise your AnalystThesis."
     
-    The CIO has provided the following critical feedback:
-    {state.cio_critique}
-    
-    Please revise your thesis accordingly. Defend your stance with data or concede points and lower your confidence score.
-    Output your final AnalystThesis.
-    """
-    
-    bear_prompt = f"""
-    Your original thesis:
-    {state.bear_draft}
-    
-    The CIO has provided the following critical feedback:
-    {state.cio_critique}
-    
-    Please revise your thesis accordingly. Defend your stance with data or concede points and lower your confidence score.
-    Output your final AnalystThesis.
-    """
-    
-    bull_task = bull_agent.run(bull_prompt)
-    bear_task = bear_agent.run(bear_prompt)
+    logger.info("Triggering Analyst revisions in parallel...")
+    bull_task = bull_agent.run(bull_prompt, max_iterations=10)
+    bear_task = bear_agent.run(bear_prompt, max_iterations=10)
     
     bull_resp, bear_resp = await asyncio.gather(bull_task, bear_task)
     
-    state.bull_revision = bull_resp.result.text
-    state.bear_revision = bear_resp.result.text
+    state.bull_revision = bull_resp.last_message.text
+    state.bear_revision = bear_resp.last_message.text
     
     logger.info("Revisions complete. Moving to Final Judgment.")
     return "judgment"
@@ -143,8 +160,8 @@ async def step_judgment(state: TradingState) -> WorkflowReservedStepName:
     Output the final, structured FinalReport.
     """
     
-    resp = await cio_agent.run(prompt)
-    state.final_report = resp.result.text
+    resp = await cio_agent.run(prompt, max_iterations=15)
+    state.final_report = resp.last_message.text
     
     logger.info("Workflow Complete.")
     return Workflow.END

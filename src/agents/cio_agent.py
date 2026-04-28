@@ -67,9 +67,10 @@ CIO_PROMPT = """<system_prompt>
 
 def create_cio_agent(context: UserContext) -> ToolCallingAgent:
     llm = ChatModel.from_name(
-        "gemini:gemini-3.1-pro-preview",
+        "openai:gpt-4o",
         ChatModelParameters(temperature=0.1)
     )
+    llm.allow_parallel_tool_calls = True
     
     tools = [
         check_market_regime_tool,

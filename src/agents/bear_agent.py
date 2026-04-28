@@ -73,9 +73,10 @@ BEAR_PROMPT = """<system_prompt>
 
 def create_bear_agent(context: UserContext) -> ToolCallingAgent:
     llm = ChatModel.from_name(
-        "gemini:gemini-3.1-flash-lite-preview",
+        "openai:gpt-4o-mini",
         ChatModelParameters(temperature=0.2)
     )
+    llm.allow_parallel_tool_calls = True
     
     tools = [
         get_multimodal_chart_tool,

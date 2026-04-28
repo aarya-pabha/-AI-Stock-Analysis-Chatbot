@@ -8,8 +8,8 @@ def test_agent_creation():
     
     bull = create_bull_agent(context)
     assert bull is not None
-    assert bull._llm.model_id == "gemini-3.1-flash-lite-preview"
+    assert bull._llm.model_id == "gemini-2.5-flash"
     
     cio = create_cio_agent(context)
     assert cio is not None
-    assert cio._llm.model_id == "gemini-3.1-pro-preview"
+    assert cio._llm.model_id == "gemini-2.5-pro"

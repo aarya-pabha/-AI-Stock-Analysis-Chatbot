@@ -97,17 +97,19 @@ class BacktestEngine:
             curr += timedelta(days=self.interval_days)
         return dates
 
-    async def run(self) -> List[Dict[str, Any]]:
-        """Runs the backtest loop."""
+    async def run(self):
+        """Runs the backtest loop and yields results date-by-date."""
         sim_dates = self.get_simulation_dates()
         logger.info(f"Starting backtest for {self.ticker} across {len(sim_dates)} dates.")
         
-        # Ensure BACKTEST_MODE is true for cost optimization
         import os
+        import re
         os.environ["BACKTEST_MODE"] = "true"
         
         for date in sim_dates:
             logger.info(f"Simulating Day: {date}")
+            # Yield a progress signal immediately for every date
+            yield {"date": date, "status": "Analyzing..."}
             
             context = UserContext(
                 ticker=self.ticker,
@@ -116,21 +118,27 @@ class BacktestEngine:
                 investment_horizon="Short-Term"
             )
             
-            # Initialize state with the simulated end_date
             state = TradingState(context=context, simulated_date=date)
             
             try:
                 workflow = create_trading_workflow()
                 response = await workflow.run(state)
-                final_state = response.state
+                final_report_raw = response.state.final_report
                 
-                # Check for "Buy" signal with confidence > 75%
-                # We need to parse the JSON string from final_report
+                if not final_report_raw:
+                    logger.warning(f"Empty final report for {date}")
+                    continue
+
+                # Robust JSON extraction using regex
+                json_match = re.search(r"(\{.*\})", final_report_raw, re.DOTALL)
+                if json_match:
+                    clean_json = json_match.group(1)
+                else:
+                    clean_json = final_report_raw.strip()
+
                 try:
-                    report_data = json.loads(final_state.final_report)
+                    report_data = json.loads(clean_json)
                     signal = report_data.get("short_term_signal", "Hold")
-                    # We'll assume the CIO synthesizes a confidence score or we extract it
-                    # For now, if it's a Buy, we simulate it
                     
                     if signal == "Buy":
                         math = report_data.get("actionable_math", {})
@@ -150,10 +158,18 @@ class BacktestEngine:
                             }
                             self.results.append(result)
                             logger.info(f"Trade Result for {date}: {audit['outcome']} ({audit['pnl_pct']}%)")
+                            yield result # Yield the actual trade
+                        else:
+                            yield {"date": date, "status": "Buy signal but missing price levels."}
+                    else:
+                        yield {"date": date, "status": f"No Trade ({signal})"}
                 except Exception as parse_err:
                     logger.error(f"Failed to parse FinalReport for {date}: {parse_err}")
+                    yield {"date": date, "status": "Analysis Error (Parse Failed)"}
                     
             except Exception as e:
                 logger.error(f"Workflow failed for {date}: {e}")
-            
-        return self.results
+                yield {"date": date, "status": f"Workflow Error: {str(e)[:50]}"}
+        
+        return
+

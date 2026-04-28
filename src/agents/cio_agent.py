@@ -1,20 +1,11 @@
-from beeai_framework.agents.react.agent import ReactAgent
-from beeai_framework.agents.react.runners.default.prompts import SystemPromptTemplate
-from beeai_framework.client.tool_parameters import ChatModelParameters
+from beeai_framework.agents.tool_calling.agent import ToolCallingAgent
+from beeai_framework.backend.chat import ChatModel, ChatModelParameters
 from beeai_framework.memory.unconstrained_memory import UnconstrainedMemory
 
-try:
-    from beeai_framework.client.chat import ChatModel
-except ImportError:
-    class ChatModel:
-        @classmethod
-        def from_name(cls, name, parameters=None):
-            return None
-
 from src.tools.agent_tools import (
-    CheckMarketRegimeTool,
-    CheckLiquidityGateTool,
-    CalculateRiskRewardTool
+    check_market_regime_tool,
+    check_liquidity_gate_tool,
+    calculate_risk_reward_tool
 )
 from src.orchestration.schemas import UserContext
 
@@ -74,16 +65,16 @@ CIO_PROMPT = """<system_prompt>
   </critical_constraints>
 </system_prompt>"""
 
-def create_cio_agent(context: UserContext) -> ReactAgent:
+def create_cio_agent(context: UserContext) -> ToolCallingAgent:
     llm = ChatModel.from_name(
-        "google:gemini-3.1-pro",
+        "gemini:gemini-3.1-pro-preview",
         ChatModelParameters(temperature=0.1)
     )
     
     tools = [
-        CheckMarketRegimeTool(),
-        CheckLiquidityGateTool(),
-        CalculateRiskRewardTool()
+        check_market_regime_tool,
+        check_liquidity_gate_tool,
+        calculate_risk_reward_tool
     ]
     
     formatted_prompt = CIO_PROMPT.format(
@@ -93,7 +84,7 @@ def create_cio_agent(context: UserContext) -> ReactAgent:
         investment_horizon=context.investment_horizon
     )
     
-    agent = ReactAgent(
+    agent = ToolCallingAgent(
         llm=llm,
         tools=tools,
         memory=UnconstrainedMemory(),

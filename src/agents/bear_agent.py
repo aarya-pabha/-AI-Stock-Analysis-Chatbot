@@ -1,22 +1,13 @@
-from beeai_framework.agents.react.agent import ReactAgent
-from beeai_framework.agents.react.runners.default.prompts import SystemPromptTemplate
-from beeai_framework.client.tool_parameters import ChatModelParameters
+from beeai_framework.agents.tool_calling.agent import ToolCallingAgent
+from beeai_framework.backend.chat import ChatModel, ChatModelParameters
 from beeai_framework.memory.unconstrained_memory import UnconstrainedMemory
 
-try:
-    from beeai_framework.client.chat import ChatModel
-except ImportError:
-    class ChatModel:
-        @classmethod
-        def from_name(cls, name, parameters=None):
-            return None
-
 from src.tools.agent_tools import (
-    GetMultimodalChartTool,
-    GetVolatilityIndicatorsTool,
-    GetRiskMetricsTool,
-    GetInsiderSellingTool,
-    GetShortInterestDataTool
+    get_multimodal_chart_tool,
+    get_volatility_indicators_tool,
+    get_risk_metrics_tool,
+    get_insider_selling_tool,
+    get_short_interest_data_tool
 )
 from src.orchestration.schemas import UserContext
 
@@ -80,18 +71,18 @@ BEAR_PROMPT = """<system_prompt>
   </critical_constraints>
 </system_prompt>"""
 
-def create_bear_agent(context: UserContext) -> ReactAgent:
+def create_bear_agent(context: UserContext) -> ToolCallingAgent:
     llm = ChatModel.from_name(
-        "google:gemini-3.1-flash",
+        "gemini:gemini-3.1-flash-lite-preview",
         ChatModelParameters(temperature=0.2)
     )
     
     tools = [
-        GetMultimodalChartTool(),
-        GetVolatilityIndicatorsTool(),
-        GetRiskMetricsTool(),
-        GetInsiderSellingTool(),
-        GetShortInterestDataTool()
+        get_multimodal_chart_tool,
+        get_volatility_indicators_tool,
+        get_risk_metrics_tool,
+        get_insider_selling_tool,
+        get_short_interest_data_tool
     ]
     
     formatted_prompt = BEAR_PROMPT.format(
@@ -100,7 +91,7 @@ def create_bear_agent(context: UserContext) -> ReactAgent:
         investment_horizon=context.investment_horizon
     )
     
-    agent = ReactAgent(
+    agent = ToolCallingAgent(
         llm=llm,
         tools=tools,
         memory=UnconstrainedMemory(),

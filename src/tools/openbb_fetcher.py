@@ -26,14 +26,14 @@ def get_momentum_indicators(ticker: str) -> Dict[str, Any]:
         macd = obb.technical.macd(data=df, target="close", fast=12, slow=26, signal=9).to_df()
         
         # Safely extract latest values
-        rsi_val = rsi.iloc[-1].get("rsi_14", None)
-        macd_val = macd.iloc[-1].get("macd_12_26_9", None)
-        macd_hist = macd.iloc[-1].get("macd_histogram_12_26_9", None)
-        
+        rsi_val = rsi.iloc[-1].get("close_RSI_14", None)
+        macd_val = macd.iloc[-1].get("close_MACD_12_26_9", None)
+        macd_hist = macd.iloc[-1].get("close_MACDh_12_26_9", None)
+
         return {
-            "rsi_14": round(rsi_val, 2) if pd.notnull(rsi_val) else None,
-            "macd": round(macd_val, 2) if pd.notnull(macd_val) else None,
-            "macd_histogram": round(macd_hist, 2) if pd.notnull(macd_hist) else None,
+            "rsi_14": round(float(rsi_val), 2) if pd.notnull(rsi_val) else None,
+            "macd": round(float(macd_val), 2) if pd.notnull(macd_val) else None,
+            "macd_histogram": round(float(macd_hist), 2) if pd.notnull(macd_hist) else None,
             "momentum_signal": "Bullish" if pd.notnull(macd_hist) and macd_hist > 0 else "Bearish"
         }
     except Exception as e:
@@ -48,16 +48,17 @@ def get_volatility_indicators(ticker: str) -> Dict[str, Any]:
         bbands = obb.technical.bbands(data=df, target="close", length=20, std=2).to_df()
         atr = obb.technical.atr(data=df, length=14).to_df()
         
-        bb_upper = bbands.iloc[-1].get("bbands_upper_20_2.0", None)
-        bb_lower = bbands.iloc[-1].get("bbands_lower_20_2.0", None)
-        bb_mid = bbands.iloc[-1].get("bbands_middle_20_2.0", None)
-        atr_val = atr.iloc[-1].get("atr_14", None)
-        
+        # Safely extract latest values
+        bb_upper = bbands.iloc[-1].get("close_BBU_20_2.0", None)
+        bb_lower = bbands.iloc[-1].get("close_BBL_20_2.0", None)
+        bb_mid = bbands.iloc[-1].get("close_BBM_20_2.0", None)
+        atr_val = atr.iloc[-1].get("ATRr_14", None)
+
         return {
-            "atr_14": round(atr_val, 2) if pd.notnull(atr_val) else None,
-            "bbands_upper": round(bb_upper, 2) if pd.notnull(bb_upper) else None,
-            "bbands_middle": round(bb_mid, 2) if pd.notnull(bb_mid) else None,
-            "bbands_lower": round(bb_lower, 2) if pd.notnull(bb_lower) else None
+            "atr_14": round(float(atr_val), 2) if pd.notnull(atr_val) else None,
+            "bbands_upper": round(float(bb_upper), 2) if pd.notnull(bb_upper) else None,
+            "bbands_middle": round(float(bb_mid), 2) if pd.notnull(bb_mid) else None,
+            "bbands_lower": round(float(bb_lower), 2) if pd.notnull(bb_lower) else None
         }
     except Exception as e:
         return {"error": f"Failed to calculate volatility indicators: {str(e)}"}

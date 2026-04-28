@@ -1,25 +1,13 @@
-from beeai_framework.agents.react.agent import ReactAgent
-from beeai_framework.agents.react.runners.default.prompts import SystemPromptTemplate
-from beeai_framework.client.tool_parameters import ChatModelParameters
+from beeai_framework.agents.tool_calling.agent import ToolCallingAgent
+from beeai_framework.backend.chat import ChatModel, ChatModelParameters
 from beeai_framework.memory.unconstrained_memory import UnconstrainedMemory
 
-# Import the base ChatModel directly according to beeai conventions (placeholder implementation)
-# In real application, we would use the correct provider logic, e.g., from beeai_framework.client import ChatModel
-try:
-    from beeai_framework.client.chat import ChatModel
-except ImportError:
-    # Fallback placeholder if actual location differs
-    class ChatModel:
-        @classmethod
-        def from_name(cls, name, parameters=None):
-            return None
-
 from src.tools.agent_tools import (
-    GetMultimodalChartTool,
-    GetMomentumIndicatorsTool,
-    GetGrowthMetricsTool,
-    GetInsiderBuyingTool,
-    GetAnalystUpgradesTool
+    get_multimodal_chart_tool,
+    get_momentum_indicators_tool,
+    get_growth_metrics_tool,
+    get_insider_buying_tool,
+    get_analyst_upgrades_tool
 )
 from src.orchestration.schemas import UserContext
 
@@ -83,18 +71,18 @@ BULL_PROMPT = """<system_prompt>
   </critical_constraints>
 </system_prompt>"""
 
-def create_bull_agent(context: UserContext) -> ReactAgent:
+def create_bull_agent(context: UserContext) -> ToolCallingAgent:
     llm = ChatModel.from_name(
-        "google:gemini-3.1-flash",
+        "gemini:gemini-3.1-flash-lite-preview",
         ChatModelParameters(temperature=0.2)
     )
     
     tools = [
-        GetMultimodalChartTool(),
-        GetMomentumIndicatorsTool(),
-        GetGrowthMetricsTool(),
-        GetInsiderBuyingTool(),
-        GetAnalystUpgradesTool()
+        get_multimodal_chart_tool,
+        get_momentum_indicators_tool,
+        get_growth_metrics_tool,
+        get_insider_buying_tool,
+        get_analyst_upgrades_tool
     ]
     
     # Format prompt with context
@@ -104,7 +92,7 @@ def create_bull_agent(context: UserContext) -> ReactAgent:
         investment_horizon=context.investment_horizon
     )
     
-    agent = ReactAgent(
+    agent = ToolCallingAgent(
         llm=llm,
         tools=tools,
         memory=UnconstrainedMemory(),

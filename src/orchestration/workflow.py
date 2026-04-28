@@ -43,8 +43,8 @@ async def step_drafting(state: TradingState) -> WorkflowStep:
     prompt = f"Analyze {state.context.ticker} and generate your initial AnalystThesis based on your persona instructions."
     
     # Run analysts concurrently for speed
-    bull_task = bull_agent.run(prompt=prompt)
-    bear_task = bear_agent.run(prompt=prompt)
+    bull_task = bull_agent.run(prompt)
+    bear_task = bear_agent.run(prompt)
     
     bull_resp, bear_resp = await asyncio.gather(bull_task, bear_task)
     
@@ -73,7 +73,7 @@ async def step_critique(state: TradingState) -> WorkflowStep:
     and provide explicit feedback for their required revisions. Do NOT output the Final Report yet.
     """
     
-    resp = await cio_agent.run(prompt=prompt)
+    resp = await cio_agent.run(prompt)
     state.cio_critique = resp.result.text
     
     logger.info("CIO critique generated. Moving to Revision.")
@@ -109,8 +109,8 @@ async def step_revision(state: TradingState) -> WorkflowStep:
     Output your final AnalystThesis.
     """
     
-    bull_task = bull_agent.run(prompt=bull_prompt)
-    bear_task = bear_agent.run(prompt=bear_prompt)
+    bull_task = bull_agent.run(bull_prompt)
+    bear_task = bear_agent.run(bear_prompt)
     
     bull_resp, bear_resp = await asyncio.gather(bull_task, bear_task)
     
@@ -143,7 +143,7 @@ async def step_judgment(state: TradingState) -> WorkflowReservedStepName:
     Output the final, structured FinalReport.
     """
     
-    resp = await cio_agent.run(prompt=prompt)
+    resp = await cio_agent.run(prompt)
     state.final_report = resp.result.text
     
     logger.info("Workflow Complete.")

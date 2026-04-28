@@ -1,0 +1,21 @@
+[project]
+name = "ai-stock-analysis-chatbot"
+version = "0.1.0"
+description = "A conversational AI system for stock analysis using a Multimodal Multi-Agent Council."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beeai-framework",
+    "mcp",
+    "openbb",
+    "gradio",
+    "pydantic",
+    "mplfinance",
+    "pandas",
+    "yfinance",
+    "matplotlib"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

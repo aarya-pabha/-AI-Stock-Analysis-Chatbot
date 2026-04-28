@@ -7,7 +7,7 @@
 
 ## 2. Architecture & Tech Stack
 *   **Orchestration:** BeeAI (Enables stateful, cyclic multi-agent workflows and reflection loops).
-*   **Agent Models:** Vision-Language Models (VLMs) like GPT-4o or Claude 3.5 Sonnet capable of multimodal reasoning (interpreting charts + data).
+*   **Agent Models:** Vision-Language Models (VLMs) like Google Gemini 2.0 Pro capable of multimodal reasoning (interpreting charts + data).
 *   **Data Infrastructure:** OpenBB accessed via Model Context Protocol (MCP) for resilient, multi-source data (yfinance, SEC, options, insider data).
 *   **Interface:** Gradio chat UI.
 
@@ -51,7 +51,14 @@ If omitted, the system falls back to default assumptions and explicitly disclose
     *   `calculate_risk_reward(entry, atr_value, risk_tolerance)`: Deterministic Python script. Calculates exact Stop-Loss and Take-Profit targets based on ATR and user risk profile.
     *   `evaluate_reflection_delta(draft_1, draft_2)`: Tracks argument changes post-critique to finalize confidence scores.
 
-## 5. Logic Flow & The Agentic Reflection Loop
+## 5. Quantitative Constraints & Dynamic Regime-Aware Weighting
+The agents are hard-coded to follow 2026 quantitative trading research rules to prevent generic reasoning:
+1.  **Regime Detection First:** Analysts must prioritize specific indicators based on market regime (Trending vs Ranging) to avoid whipsaw false signals.
+2.  **Smart Money Concepts (SMC):** Agents are instructed to look for "Liquidity Sweeps" rather than generic candlestick patterns. A valid sweep traps retail liquidity (high Wick-to-Body ratio at a key level).
+3.  **Volume & Value Area:** Breakouts are only valid if volume > 1.2x the 20-day average. Value Area (POC) rejections signal institutional distribution.
+4.  **4-Quadrant Volatility CIO Check:** The CIO combines the SPY 200-SMA trend with VIX/ATR. (e.g., Bull Market + High Volatility requires a massive confidence threshold).
+
+## 6. Logic Flow & The Agentic Reflection Loop
 
 1.  **User Request:** User provides ticker and optional parameters.
 2.  **Data Generation:** MCP Server pulls data and generates the annotated `.png` chart.
@@ -61,9 +68,9 @@ If omitted, the system falls back to default assumptions and explicitly disclose
 6.  **Final Judgment:** The CIO terminates the loop, calculates the final Confidence Score, and runs deterministic math (`calculate_risk_reward`).
 7.  **Output Generation:** The system returns a structured response including the Assumption Disclosure, Short-Term Signal, Long-Term Signal, Confidence Score, and Actionable Price Levels.
 
-## 6. Backtesting Methodology (The FINSABER Standard)
+## 7. Backtesting Methodology (The FINSABER Standard)
 To ensure the system generates actual Alpha and prevents LLM hallucination/data leakage, a rigorous backtesting harness will be implemented prior to V1 release:
-1.  **Time-Capsule Integrity:** Backtests will strictly run on data post-dating the LLM's knowledge cutoff (e.g., Jan 2024 to Present). The MCP server will be restricted to feed historical point-in-time data (no live web searches during backtests).
+1.  **Time-Capsule Integrity:** Backtests will strictly run on data post-dating the LLM's knowledge cutoff. The MCP server will be restricted to feed historical point-in-time data (no live web searches during backtests).
 2.  **Walk-Forward Rolling Windows:** Testing will occur in 3-month rolling blocks (e.g., Jan-Mar, roll to Feb-Apr) to prove the agents adapt to changing market regimes (Bull, Bear, Choppy).
-3.  **Physical Execution Audit:** All CIO "Buy/Sell" signals will pass through a Python backtester (e.g., `Backtrader` or Magents) to apply realistic slippage and commission, verifying if the Risk/Reward targets were actually hit before the stop-loss.
+3.  **Physical Execution Audit:** All CIO "Buy/Sell" signals will pass through a Python backtester (e.g., `Backtrader` or Magents) to apply realistic slippage and commission.
 4.  **Success Metrics:** The system must achieve a Sharpe Ratio > 1.2 and a Win Rate > 45% (profitable given the dynamic R:R) in out-of-sample testing to be validated for production.

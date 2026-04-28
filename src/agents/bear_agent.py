@@ -72,8 +72,12 @@ BEAR_PROMPT = """<system_prompt>
 </system_prompt>"""
 
 def create_bear_agent(context: UserContext) -> ToolCallingAgent:
+    # Model selection based on BACKTEST_MODE
+    import os
+    model_name = "openai:gpt-4o-mini" # Analysts are always mini for cost
+    
     llm = ChatModel.from_name(
-        "openai:gpt-4o-mini",
+        model_name,
         ChatModelParameters(temperature=0.2)
     )
     llm.allow_parallel_tool_calls = True

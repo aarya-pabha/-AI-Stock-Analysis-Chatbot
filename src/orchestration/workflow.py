@@ -18,6 +18,7 @@ WorkflowStep: TypeAlias = Literal["drafting", "critique", "revision", "judgment"
 class TradingState(BaseModel):
     """The global state object passed between agents during the workflow."""
     context: UserContext
+    simulated_date: str | None = Field(default=None, description="The point-in-time cutoff (YYYY-MM-DD) for backtesting.")
     
     # Iteration 0
     bull_draft: str | None = Field(default=None, description="Draft 1 from the Bull")
@@ -49,13 +50,14 @@ async def step_drafting(state: TradingState) -> WorkflowStep:
     logger.info(f"--- Phase: Drafting (Iteration 0) for {state.context.ticker} ---")
     
     ticker = state.context.ticker
+    end_date = state.simulated_date
     
-    # Pre-fetch all data to ensure consistency and speed
-    logger.info(f"Pre-fetching data for {ticker}...")
+    # Pre-fetch all data with simulated end_date if provided
+    logger.info(f"Pre-fetching data for {ticker} (End Date: {end_date})...")
     data_packet = {
-        "momentum": get_momentum_indicators(ticker),
-        "volatility": get_volatility_indicators(ticker),
-        "growth": get_growth_metrics(ticker),
+        "momentum": get_momentum_indicators(ticker, end_date=end_date),
+        "volatility": get_volatility_indicators(ticker, end_date=end_date),
+        "growth": get_growth_metrics(ticker), # Fundamentals are generally point-in-time from yfinance
         "risk": get_risk_metrics(ticker),
         "insider": get_insider_activity(ticker),
         "short_interest": get_short_interest_data(ticker),
@@ -65,9 +67,14 @@ async def step_drafting(state: TradingState) -> WorkflowStep:
     bull_agent = create_bull_agent(state.context)
     bear_agent = create_bear_agent(state.context)
     
+    # Update chart with end_date
+    from src.tools.chart_generator import generate_multimodal_chart
+    generate_multimodal_chart(ticker, timeframe="daily", end_date=end_date)
+    
     data_str = json.dumps(data_packet, indent=2)
     prompt = f"""
     Analyze the following pre-fetched data and chart for {ticker}. 
+    Current Simulated Date: {end_date if end_date else "Present Day"}
     Generate your initial AnalystThesis based on your persona instructions.
     
     [MARKET DATA]

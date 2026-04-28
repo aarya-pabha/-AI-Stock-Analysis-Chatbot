@@ -66,8 +66,13 @@ CIO_PROMPT = """<system_prompt>
 </system_prompt>"""
 
 def create_cio_agent(context: UserContext) -> ToolCallingAgent:
+    # Model selection based on BACKTEST_MODE
+    import os
+    backtest_mode = os.getenv("BACKTEST_MODE", "false").lower() == "true"
+    model_name = "openai:gpt-4o-mini" if backtest_mode else "openai:gpt-4o"
+    
     llm = ChatModel.from_name(
-        "openai:gpt-4o",
+        model_name,
         ChatModelParameters(temperature=0.1)
     )
     llm.allow_parallel_tool_calls = True

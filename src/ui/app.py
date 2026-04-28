@@ -76,45 +76,97 @@ async def run_analysis(ticker: str, position: str, risk: str, horizon: str):
     except Exception as e:
         yield f"**Error during execution:** {str(e)}", None, None, None, None
 
+async def run_backtest_ui(ticker: str, start_date: str, end_date: str):
+    """Bridge between Gradio and the BacktestEngine."""
+    from src.orchestration.backtest_engine import BacktestEngine
+    
+    if not ticker or not start_date or not end_date:
+        yield "Error: Please provide ticker and date range.", None
+        return
+        
+    engine = BacktestEngine(ticker.upper(), start_date, end_date)
+    yield f"🚀 Initializing Backtest for {ticker} from {start_date} to {end_date}...", None
+    
+    results = await engine.run()
+    
+    if not results:
+        yield "No 'Buy' signals generated during this period.", None
+        return
+        
+    df = pd.DataFrame(results)
+    
+    # Calculate aggregate metrics
+    wins = len(df[df['pnl_pct'] > 0])
+    total = len(df)
+    win_rate = (wins / total) * 100 if total > 0 else 0
+    avg_pnl = df['pnl_pct'].mean()
+    
+    summary = f"""
+    ### 📈 Backtest Results: {ticker}
+    - **Total Trades:** {total}
+    - **Win Rate:** {win_rate:.2f}%
+    - **Avg PnL per Trade:** {avg_pnl:.2f}%
+    """
+    
+    yield summary, df
+
 def create_ui():
     """Builds the Gradio web interface."""
     
     with gr.Blocks(title="AI Stock Analysis Chatbot", theme=gr.themes.Soft()) as app:
         gr.Markdown("# 📈 AI Stock Analysis Chatbot (2026 SOTA)")
-        gr.Markdown("An institutional-grade, multi-agent system powered by Gemini 3.1, BeeAI, and OpenBB. Evaluates technicals, fundamentals, and strict quantitative regimes before issuing mathematically derived targets.")
         
-        with gr.Row():
-            with gr.Column(scale=1):
-                gr.Markdown("### 1. Context Enrichment Gateway")
-                ticker_input = gr.Textbox(label="Ticker Symbol", placeholder="e.g. AAPL, NVDA, SPY")
-                position_input = gr.Radio(["None", "Long", "Short"], label="Your Current Position", value="None")
-                risk_input = gr.Radio(["Conservative", "Moderate", "Aggressive"], label="Risk Tolerance", value="Moderate")
-                horizon_input = gr.Radio(["Short-Term", "Long-Term", "Both"], label="Investment Horizon", value="Both")
+        with gr.Tabs():
+            with gr.Tab("Live Analysis"):
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        gr.Markdown("### 1. Context Enrichment Gateway")
+                        ticker_input = gr.Textbox(label="Ticker Symbol", placeholder="e.g. AAPL, NVDA, SPY")
+                        position_input = gr.Radio(["None", "Long", "Short"], label="Your Current Position", value="None")
+                        risk_input = gr.Radio(["Conservative", "Moderate", "Aggressive"], label="Risk Tolerance", value="Moderate")
+                        horizon_input = gr.Radio(["Short-Term", "Long-Term", "Both"], label="Investment Horizon", value="Both")
+                        
+                        submit_btn = gr.Button("Run Institutional Analysis", variant="primary")
+                        status_box = gr.Markdown("Ready.")
+                        
+                    with gr.Column(scale=2):
+                        gr.Markdown("### 2. Visual Context")
+                        chart_output = gr.Image(label="Generated Multimodal Chart (Analyzed by VLMs)", type="filepath")
                 
-                submit_btn = gr.Button("Run Institutional Analysis", variant="primary")
-                status_box = gr.Markdown("Ready.")
-                
-            with gr.Column(scale=2):
-                gr.Markdown("### 2. Visual Context")
-                chart_output = gr.Image(label="Generated Multimodal Chart (Analyzed by VLMs)", type="filepath")
-        
-        with gr.Row():
-            with gr.Column():
-                gr.Markdown("### 3. Agentic Debate (Iteration 0)")
-                with gr.Accordion("Bull Agent Thesis", open=False):
-                    bull_output = gr.Markdown("Awaiting execution...")
-                with gr.Accordion("Bear Agent Thesis", open=False):
-                    bear_output = gr.Markdown("Awaiting execution...")
-            
-            with gr.Column():
-                gr.Markdown("### 4. CIO Final Judgment (Iteration 2)")
-                final_output = gr.Markdown("Awaiting execution...")
-        
-        # Wire up the button
+                with gr.Row():
+                    with gr.Column():
+                        gr.Markdown("### 3. Agentic Debate (Iteration 0)")
+                        with gr.Accordion("Bull Agent Thesis", open=False):
+                            bull_output = gr.Markdown("Awaiting execution...")
+                        with gr.Accordion("Bear Agent Thesis", open=False):
+                            bear_output = gr.Markdown("Awaiting execution...")
+                    
+                    with gr.Column():
+                        gr.Markdown("### 4. CIO Final Judgment (Iteration 2)")
+                        final_output = gr.Markdown("Awaiting execution...")
+
+            with gr.Tab("Institutional Backtest (FINSABER)"):
+                gr.Markdown("Test the council's alpha generation using historical point-in-time data.")
+                with gr.Row():
+                    bt_ticker = gr.Textbox(label="Ticker", value="AAPL")
+                    bt_start = gr.Textbox(label="Start Date", value="2024-01-01")
+                    bt_end = gr.Textbox(label="End Date", value="2024-03-31")
+                bt_btn = gr.Button("Execute Walk-Forward Simulation", variant="primary")
+                bt_summary = gr.Markdown("No backtest data.")
+                bt_results = gr.Dataframe(label="Trade Log")
+
+        # Wire up Live btn
         submit_btn.click(
             fn=run_analysis,
             inputs=[ticker_input, position_input, risk_input, horizon_input],
             outputs=[status_box, chart_output, bull_output, bear_output, final_output]
+        )
+        
+        # Wire up Backtest btn
+        bt_btn.click(
+            fn=run_backtest_ui,
+            inputs=[bt_ticker, bt_start, bt_end],
+            outputs=[bt_summary, bt_results]
         )
         
     return app

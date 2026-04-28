@@ -4,15 +4,16 @@ import pandas as pd
 from pathlib import Path
 from typing import Optional
 
-def generate_multimodal_chart(ticker: str, timeframe: str = "daily", save_dir: str = "data") -> Optional[str]:
+def generate_multimodal_chart(ticker: str, timeframe: str = "daily", save_dir: str = "data", end_date: Optional[str] = None) -> Optional[str]:
     """
     Fetches OHLCV data for a ticker and generates a high-resolution .png candlestick chart 
-    with volume and moving averages plotted for VLM analysis.
+    with volume and moving averages plotted for VLM analysis. Supports point-in-time data for backtesting.
     
     Args:
         ticker (str): The stock symbol (e.g., 'AAPL').
         timeframe (str): 'daily' or 'weekly'.
         save_dir (str): The directory to save the generated image.
+        end_date (str, optional): The point-in-time cutoff (YYYY-MM-DD) for backtesting.
         
     Returns:
         Optional[str]: The absolute path to the saved .png file, or None if failed.
@@ -32,7 +33,11 @@ def generate_multimodal_chart(ticker: str, timeframe: str = "daily", save_dir: s
 
     try:
         # Fetch data
-        df = yf.download(ticker, period=period, interval=interval, progress=False)
+        if end_date:
+            # For backtesting, we need more control over the date range
+            df = yf.download(ticker, end=end_date, period=period, interval=interval, progress=False)
+        else:
+            df = yf.download(ticker, period=period, interval=interval, progress=False)
         
         if df.empty:
             print(f"Error: No data found for {ticker}.")

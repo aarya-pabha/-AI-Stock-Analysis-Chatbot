@@ -2,7 +2,7 @@ import os
 import yfinance as yf
 import pandas as pd
 from openbb import obb
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 # Authenticate OpenBB if Personal Access Token is available
 openbb_pat = os.getenv("OPENBB_PAT")
@@ -13,11 +13,14 @@ if openbb_pat:
     except Exception as e:
         print(f"Warning: Failed to authenticate OpenBB: {e}")
 
-def get_momentum_indicators(ticker: str) -> Dict[str, Any]:
-    """Returns JSON of RSI, MACD, and Stochastic oscillators."""
+def get_momentum_indicators(ticker: str, end_date: Optional[str] = None) -> Dict[str, Any]:
+    """Returns JSON of RSI, MACD, and Stochastic oscillators. Supports end_date for backtesting."""
     try:
         # Fetch historical data using yfinance provider
-        stock_data = obb.equity.price.historical(symbol=ticker, provider="yfinance")
+        if end_date:
+            stock_data = obb.equity.price.historical(symbol=ticker, provider="yfinance", end_date=end_date)
+        else:
+            stock_data = obb.equity.price.historical(symbol=ticker, provider="yfinance")
         df = stock_data.to_df()
         
         # Calculate RSI
@@ -39,10 +42,13 @@ def get_momentum_indicators(ticker: str) -> Dict[str, Any]:
     except Exception as e:
         return {"error": f"Failed to calculate momentum indicators: {str(e)}"}
 
-def get_volatility_indicators(ticker: str) -> Dict[str, Any]:
-    """Returns JSON of Bollinger Bands and Average True Range (ATR)."""
+def get_volatility_indicators(ticker: str, end_date: Optional[str] = None) -> Dict[str, Any]:
+    """Returns JSON of Bollinger Bands and Average True Range (ATR). Supports end_date."""
     try:
-        stock_data = obb.equity.price.historical(symbol=ticker, provider="yfinance")
+        if end_date:
+            stock_data = obb.equity.price.historical(symbol=ticker, provider="yfinance", end_date=end_date)
+        else:
+            stock_data = obb.equity.price.historical(symbol=ticker, provider="yfinance")
         df = stock_data.to_df()
         
         bbands = obb.technical.bbands(data=df, target="close", length=20, std=2).to_df()

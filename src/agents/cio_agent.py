@@ -76,7 +76,7 @@ CIO_PROMPT = """<system_prompt>
 
 def create_cio_agent(context: UserContext) -> ReactAgent:
     llm = ChatModel.from_name(
-        "google:gemini-2.5-pro",
+        "google:gemini-3.1-pro",
         ChatModelParameters(temperature=0.1)
     )
     

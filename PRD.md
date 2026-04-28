@@ -7,7 +7,7 @@
 
 ## 2. Architecture & Tech Stack
 *   **Orchestration:** BeeAI (Enables stateful, cyclic multi-agent workflows and reflection loops).
-*   **Agent Models:** Vision-Language Models (VLMs) like Google Gemini 2.0 Pro capable of multimodal reasoning (interpreting charts + data).
+*   **Agent Models:** Vision-Language Models (VLMs) like Google Gemini 3.1 Pro (for Orchestration) and Gemini 3.1 Flash (for Analysts) capable of multimodal reasoning (interpreting charts + data).
 *   **Data Infrastructure:** OpenBB accessed via Model Context Protocol (MCP) for resilient, multi-source data (yfinance, SEC, options, insider data).
 *   **Interface:** Gradio chat UI.
 

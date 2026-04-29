@@ -2,11 +2,16 @@
 
 An institutional-grade, multi-agent system powered by Gemini 3.1, BeeAI, and OpenBB. Evaluates technicals, fundamentals, and strict quantitative regimes before issuing mathematically derived targets.
 
-## Features
-- **Multimodal Council**: Bull, Bear, and CIO agents debating with Gemini 3.1 Pro/Flash.
-- **OpenBB Integration**: Real-time market data, momentum, volatility, and insider metrics.
+## Features (V1.0 - Institutional Grade)
+- **Multimodal Council**: Bull, Bear, and CIO agents debating with Gemini 3.1 Pro/Flash or GPT-4o.
+- **Bi-Directional Engine**: Supports both **Long and Short** equity positions with inverted risk/reward math.
+- **Institutional Backtesting (FINSABER)**:
+    - **Walk-Forward Audit**: Verifies signals against historical next-day open prices.
+    - **Active Position Tracking**: Prevents trade overlap and enables trailing risk management.
+    - **Point-in-Time Integrity**: Hard-gated tools ensure no data leakage during simulation.
 - **Agentic Reflection Loop**: Agents revise and refine their thesis through a Red Team critique.
-- **Deterministic Math Lab**: Generates exact Take-Profit and Stop-Loss based on ATR.
+- **Deterministic Math Lab**: Generates exact ATR-based Take-Profit and Stop-Loss targets.
+- **Gradio Dashboard**: Interactive Live Analysis and Walk-Forward Backtesting tabs.
 
 ## Setup
 1. Create a `.env` file with your `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) and `OPENBB_PAT`.

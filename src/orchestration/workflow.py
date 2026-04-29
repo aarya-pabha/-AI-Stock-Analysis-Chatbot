@@ -3,12 +3,16 @@ import logging
 import json
 from typing import Literal, TypeAlias
 from pydantic import BaseModel, Field
+from dotenv import load_dotenv
 
 from beeai_framework.workflows import Workflow, WorkflowReservedStepName
-from src.orchestration.schemas import UserContext
+from src.orchestration.schemas import UserContext, AnalystThesis, FinalReport
 from src.agents.bull_agent import create_bull_agent
 from src.agents.bear_agent import create_bear_agent
 from src.agents.cio_agent import create_cio_agent
+
+# Load environment variables
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +54,8 @@ async def step_drafting(state: TradingState) -> WorkflowStep:
     logger.info(f"--- Phase: Drafting (Iteration 0) for {state.context.ticker} ---")
     
     ticker = state.context.ticker
+    # Sync simulated_date to context for agents
+    state.context.simulated_date = state.simulated_date
     end_date = state.simulated_date
     
     # Pre-fetch all data with simulated end_date if provided
@@ -57,11 +63,11 @@ async def step_drafting(state: TradingState) -> WorkflowStep:
     data_packet = {
         "momentum": get_momentum_indicators(ticker, end_date=end_date),
         "volatility": get_volatility_indicators(ticker, end_date=end_date),
-        "growth": get_growth_metrics(ticker), # Fundamentals are generally point-in-time from yfinance
-        "risk": get_risk_metrics(ticker),
-        "insider": get_insider_activity(ticker),
-        "short_interest": get_short_interest_data(ticker),
-        "analyst_recs": get_analyst_upgrades(ticker)
+        "growth": get_growth_metrics(ticker, end_date=end_date),
+        "risk": get_risk_metrics(ticker, end_date=end_date),
+        "insider": get_insider_activity(ticker, end_date=end_date),
+        "short_interest": get_short_interest_data(ticker, end_date=end_date),
+        "analyst_recs": get_analyst_upgrades(ticker, end_date=end_date)
     }
     
     bull_agent = create_bull_agent(state.context)
@@ -84,14 +90,17 @@ async def step_drafting(state: TradingState) -> WorkflowStep:
     """
     
     logger.info("Triggering Bull and Bear analysts in parallel...")
-    # Parallel execution using asyncio.gather
-    bull_task = bull_agent.run(prompt, max_iterations=10)
-    bear_task = bear_agent.run(prompt, max_iterations=10)
+    # Parallel execution using expected_output for schema enforcement
+    bull_task = bull_agent.run(prompt, max_iterations=10, expected_output=AnalystThesis)
+    bear_task = bear_agent.run(prompt, max_iterations=10, expected_output=AnalystThesis)
     
     bull_resp, bear_resp = await asyncio.gather(bull_task, bear_task)
     
     state.bull_draft = bull_resp.last_message.text
     state.bear_draft = bear_resp.last_message.text
+    
+    logger.info(f"Bull Draft: {state.bull_draft[:500]}...")
+    logger.info(f"Bear Draft: {state.bear_draft[:500]}...")
     
     logger.info("Drafting complete. Moving to Critique.")
     return "critique"
@@ -133,8 +142,8 @@ async def step_revision(state: TradingState) -> WorkflowStep:
     bear_prompt = f"Your original thesis:\n{state.bear_draft}\n\nCIO Feedback:\n{state.cio_critique}\n\nPlease revise your AnalystThesis."
     
     logger.info("Triggering Analyst revisions in parallel...")
-    bull_task = bull_agent.run(bull_prompt, max_iterations=10)
-    bear_task = bear_agent.run(bear_prompt, max_iterations=10)
+    bull_task = bull_agent.run(bull_prompt, max_iterations=10, expected_output=AnalystThesis)
+    bear_task = bear_agent.run(bear_prompt, max_iterations=10, expected_output=AnalystThesis)
     
     bull_resp, bear_resp = await asyncio.gather(bull_task, bear_task)
     
@@ -167,7 +176,7 @@ async def step_judgment(state: TradingState) -> WorkflowReservedStepName:
     Output the final, structured FinalReport.
     """
     
-    resp = await cio_agent.run(prompt, max_iterations=15)
+    resp = await cio_agent.run(prompt, max_iterations=15, expected_output=FinalReport)
     state.final_report = resp.last_message.text
     
     logger.info("Workflow Complete.")

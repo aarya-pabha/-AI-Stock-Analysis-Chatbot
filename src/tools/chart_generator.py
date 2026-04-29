@@ -3,6 +3,8 @@ import mplfinance as mpf
 import pandas as pd
 from pathlib import Path
 from typing import Optional
+import matplotlib
+matplotlib.use('Agg') # Use non-interactive backend
 
 def generate_multimodal_chart(ticker: str, timeframe: str = "daily", save_dir: str = "data", end_date: Optional[str] = None) -> Optional[str]:
     """

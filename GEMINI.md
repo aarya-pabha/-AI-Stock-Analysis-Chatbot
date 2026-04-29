@@ -1,25 +1,27 @@
-# Project Context: AI Stock Analysis Chatbot
+# Project Context: AI Stock Analysis Chatbot (V1.0 Finished)
 
 ## 🎯 Current Status
-**Phase:** Stage 2 (Institutional Backtesting) Complete & Verified.
-**Goal:** Institutional-grade multi-agent stock analysis with point-in-time backtesting.
+**Phase:** Stage 5 (Final UI & Institutional Integration) COMPLETE.
+**Goal:** Institutional-grade multi-agent stock analysis with bi-directional walk-forward backtesting (FINSABER Standard).
 
 ## 🛠️ Tech Stack & Configuration
 - **Orchestration:** BeeAI Framework (Stateful Workflow).
 - **LLM Models:** 
-  - CIO Judge: `openai:gpt-4o`
-  - Analysts: `openai:gpt-4o-mini`
-- **Data:** OpenBB v4 (Technical + Fundamentals) + yfinance (OHLCV).
+  - CIO Judge: `openai:gpt-4o` (High-quality reasoning & tool calling)
+  - Analysts: `openai:gpt-4o-mini` (Cost-effective drafting)
+- **Data:** OpenBB v4 (Technical + Fundamentals) + yfinance (OHLCV & Real-time).
 - **Vision:** `mplfinance` generating `.png` charts for VLM analysis.
 
 ## 🧠 Core Architectural Decisions (DO NOT REVERT)
-1. **Sequential Analysis:** Analysts (Bull/Bear) run sequentially in drafting/revision to avoid 429 RPM limits.
-2. **Data Pre-fetching:** Data is fetched once in `workflow.py` and passed to agents as JSON to ensure consistency and minimize API calls.
-3. **Agentic Reflection:** 2-iteration loop (Draft -> CIO Critique -> Revision -> Final Judgment).
-4. **Resilient Parsing:** The `BacktestEngine` uses regex to extract JSON from LLM responses to handle markdown clutter.
-5. **Backtest Mode:** Environment variable `BACKTEST_MODE=true` forces CIO to use `gpt-4o-mini` to preserve credits.
+1. **Bi-Directional Engine:** Supports both "Long" and "Short" signals with inverted ATR math.
+2. **Realistic Execution:** Trades are simulated using the **Next-Day Market Open** following a signal to prevent data leakage.
+3. **Hardened Personas:** Bull/Bear analysts are strictly constrained to their optimistic/pessimistic roles to ensure maximum council friction.
+4. **Anti-Groupthink Logic:** CIO is instructed to prioritize quantitative math (R:R) over analyst caution during Bull Market regimes.
+5. **Stateful Position Tracking:** `BacktestEngine` tracks active trades and locks out new analysis until the current position closes.
+6. **Resilient Fundamentals:** Tools return neutral warnings instead of `null` to prevent bearish bias from missing historical data.
 
 ## 🚀 How to Resume
-1. Run `.\venv\Scripts\activate` inside `Trading-Project`.
+1. Run `.\venv\Scripts\activate`.
 2. Run `python main.py` to launch the Gradio UI.
-3. To continue development, see `PRD.md` for Stage 3 (Agent Customization/Refinement).
+3. Use the **Institutional Backtest** tab to verify Alpha with walk-forward audits.
+4. Future Work: Stage 6 (Portfolio Optimization / Live Brokerage APIs).

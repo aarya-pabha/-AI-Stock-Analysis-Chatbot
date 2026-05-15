@@ -22,6 +22,7 @@
 
 ## 🚀 How to Resume
 1. Run `.\venv\Scripts\activate`.
-2. Run `python main.py` to launch the Gradio UI.
-3. Use the **Institutional Backtest** tab to verify Alpha with walk-forward audits.
-4. Future Work: Stage 6 (Portfolio Optimization / Live Brokerage APIs).
+2. Run `python main.py` to launch the Gradio V2 Dashboard.
+3. Use the **Institutional Dashboard** to run multi-agent stock analysis.
+4. **Deployment:** The repo is pre-configured for Hugging Face Spaces with a `Dockerfile` and `requirements.txt`.
+5. Future Work: Stage 6 (Portfolio Optimization / Live Brokerage APIs).

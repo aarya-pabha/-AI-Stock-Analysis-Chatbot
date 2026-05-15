@@ -1,0 +1,11 @@
+beeai-framework
+mcp
+openbb
+gradio
+pydantic
+mplfinance
+pandas
+yfinance
+matplotlib
+python-dotenv
+openbb-technical

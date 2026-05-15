@@ -87,51 +87,6 @@ async def run_analysis(ticker: str, position: str, risk: str, horizon: str):
     except Exception as e:
         yield f"**Error during execution:** {str(e)}", None, None, None, None
 
-async def run_backtest_ui(ticker: str, start_date: str, end_date: str, interval: int):
-    """Bridge between Gradio and the BacktestEngine with incremental updates."""
-    from src.orchestration.backtest_engine import BacktestEngine
-    import pandas as pd
-    
-    if not ticker or not start_date or not end_date:
-        yield "Error: Please provide ticker and date range.", None
-        return
-        
-    engine = BacktestEngine(ticker.upper(), start_date, end_date, interval_days=int(interval))
-    all_trades = []
-    
-    yield f"🚀 Initializing bi-directional backtest for {ticker}...", None
-    
-    # engine.run() is an async generator yielding status, trades, and summary
-    async for result in engine.run():
-        if "summary" in result:
-            s = result["summary"]
-            final_summary = f"""
-            ### ✅ Backtest Complete: {ticker}
-            - **Total Trades:** {s['total_trades']}
-            - **Win Rate:** {s['win_rate']}%
-            - **Total PnL:** {s['total_pnl_pct']}%
-            - **Sharpe Ratio:** {s['sharpe_ratio']}
-            - **Simulation Window:** {s['start_date']} to {s['end_date']}
-            """
-            yield final_summary, pd.DataFrame(all_trades)
-            return
-
-        if "status" in result:
-            yield f"⏳ **Status:** {result['status']}", pd.DataFrame(all_trades)
-            continue
-            
-        # It's a trade result
-        all_trades.append(result)
-        df = pd.DataFrame(all_trades)
-        
-        # Display the most recent trade in the status
-        last = all_trades[-1]
-        msg = f"🔄 **Trade {len(all_trades)}:** {last['date']} | {last['direction']} at ${last['entry']} | Outcome: {last['outcome']} ({last['pnl_pct']}%)"
-        yield msg, df
-
-    if not all_trades:
-        yield "Simulation complete. No trades were triggered during this period.", None
-
 def create_ui():
     """Builds the Gradio web interface."""
     
@@ -167,29 +122,11 @@ def create_ui():
                         gr.Markdown("### 4. CIO Final Judgment (Iteration 2)")
                         final_output = gr.Markdown("Awaiting execution...")
 
-            with gr.Tab("Institutional Backtest (FINSABER)"):
-                gr.Markdown("Test the council's alpha generation using historical point-in-time data.")
-                with gr.Row():
-                    bt_ticker = gr.Textbox(label="Ticker", value="AAPL")
-                    bt_start = gr.Textbox(label="Start Date", value="2025-01-01")
-                    bt_end = gr.Textbox(label="End Date", value="2025-03-31")
-                    bt_interval = gr.Slider(minimum=1, maximum=30, value=7, step=1, label="Analysis Interval (Days)")
-                bt_btn = gr.Button("Execute Walk-Forward Simulation", variant="primary")
-                bt_summary = gr.Markdown("No backtest data.")
-                bt_results = gr.Dataframe(label="Trade Log")
-
         # Wire up Live btn
         submit_btn.click(
             fn=run_analysis,
             inputs=[ticker_input, position_input, risk_input, horizon_input],
             outputs=[status_box, chart_output, bull_output, bear_output, final_output]
-        )
-        
-        # Wire up Backtest btn
-        bt_btn.click(
-            fn=run_backtest_ui,
-            inputs=[bt_ticker, bt_start, bt_end, bt_interval],
-            outputs=[bt_summary, bt_results]
         )
         
     return app

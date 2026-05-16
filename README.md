@@ -21,41 +21,56 @@
 The system utilizes a stateful **BeeAI Workflow** to orchestrate specialized agents, each with dedicated Python toolsets.
 
 ```mermaid
-graph TD
+flowchart TD
     %% Global Entry
-    User([User Query]) --> Orch{BeeAI Orchestrator}
-    
-    %% Tool Gating
-    Orch --> Tools[(Market Data: OpenBB, yfinance, VLM)]
-    
-    %% Agentic Reflection Loop
-    subgraph Loop [Council Reflection & Decision Loop]
-        direction TB
-        
-        Tools -.-> Bull
-        Tools -.-> Bear
-        
-        Bull[<b>Bull Agent</b><br/><i>Growth & Momentum Tools</i>] -- "Initial Thesis" --> CIO
-        Bear[<b>Bear Agent</b><br/><i>Risk & Volatility Tools</i>] -- "Initial Thesis" --> CIO
-        
-        CIO{<b>CIO Judge</b><br/><i>Regime & Math Lab</i>} -- "Red Team Critique" --> Bull
-        CIO -- "Red Team Critique" --> Bear
-        
-        Bull -. "Revised Thesis" .-> CIO
-        Bear -. "Revised Thesis" .-> CIO
+    User([User Query]) --> Orchestrator{BeeAI Orchestrator}
+
+    %% Shared State & Tools
+    subgraph Data_Layer [Data & Tooling Layer]
+        direction LR
+        MCP[OpenBB / yfinance] <--> VLM[VLM Chart Generator]
     end
+
+    Orchestrator --> Data_Layer
+
+    %% Drafting Phase
+    subgraph Analysts [Phase 1 & 3: Drafting & Revision]
+        direction LR
+        Bull[<b>Bull Agent</b><br/>Momentum & Growth] 
+        Bear[<b>Bear Agent</b><br/>Volatility & Risk]
+    end
+
+    Data_Layer ==> Analysts
+
+    %% Reflection Phase
+    subgraph Judgment [Phase 2 & 4: Critique & Final Judgment]
+        direction TB
+        CIO{<b>CIO / Risk Manager</b><br/>Regime Check & Liquidity}
+        Math[[ATR Math Lab]]
+    end
+
+    %% The Core Loop
+    Analysts == "Submit Drafts" ==> CIO
+    CIO -. "Red Team Critique<br/>(Identify Vulnerabilities)" .-> Analysts
     
     %% Final Output
-    Orch --> Loop
-    CIO --> Final[/<b>Final Institutional Report</b><br/><i>TP, SL, Confidence, R:R</i>/]
-    
-    %% Visual Styling
-    style CIO fill:#f96,stroke:#333,stroke-width:2px
-    style Bull fill:#dfd,stroke:#333
-    style Bear fill:#fdd,stroke:#333
-    style Tools fill:#f0f0f0,stroke:#333
-    style Final fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    style User fill:#e8f5e9,stroke:#2e7d32
+    CIO == "Approve & Apply Math" ==> Math
+    Math ==> Final([<b>Final Institutional Report</b><br/>TP, SL, Confidence, R:R])
+
+    %% Styling
+    classDef orchestrator fill:#e3f2fd,stroke:#0288d1,stroke-width:2px;
+    classDef bull fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef bear fill:#ffebee,stroke:#c62828,stroke-width:2px;
+    classDef judge fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef tools fill:#f3e5f5,stroke:#8e24aa,stroke-width:1px;
+    classDef final fill:#e0f7fa,stroke:#0277bd,stroke-width:2px;
+
+    class Orchestrator orchestrator;
+    class Bull bull;
+    class Bear bear;
+    class CIO judge;
+    class MCP,VLM,Math tools;
+    class Final final;
 ```
 
 ---

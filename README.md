@@ -1,18 +1,78 @@
-# AI Stock Analysis Chatbot
+# 📈 AI Stock Analysis Chatbot (V1.0)
 
-An institutional-grade, multi-agent system powered by Gemini 3.1, BeeAI, and OpenBB. Evaluates technicals, fundamentals, and strict quantitative regimes before issuing mathematically derived targets.
+[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/aarya-pabha/AI-Stock-Analysis-Chatbot)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/release/python-3110/)
 
-## Features (V1.0 - Institutional Grade)
-- **Multimodal Council**: Bull, Bear, and CIO agents debating with Gemini 3.1 Pro/Flash or GPT-4o.
-- **Bi-Directional Engine**: Supports both **Long and Short** equity positions with inverted risk/reward math.
-- **Institutional Backtesting (FINSABER)**:
-    - **Walk-Forward Audit**: Verifies signals against historical next-day open prices.
-    - **Active Position Tracking**: Prevents trade overlap and enables trailing risk management.
-    - **Point-in-Time Integrity**: Hard-gated tools ensure no data leakage during simulation.
-- **Agentic Reflection Loop**: Agents revise and refine their thesis through a Red Team critique.
-- **Deterministic Math Lab**: Generates exact ATR-based Take-Profit and Stop-Loss targets.
-- **Gradio Dashboard**: Interactive Live Analysis and Walk-Forward Backtesting tabs.
+**An institutional-grade, multi-agent stock analysis engine.** Powered by Gemini 3.1, BeeAI, and OpenBB, this system simulates a professional trading floor to provide high-conviction, mathematically-backed trade signals.
 
-## Setup
-1. Create a `.env` file with your `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) and `OPENBB_PAT`.
-2. Run `python main.py` to start the Gradio app.
+---
+
+## ✨ Key Features
+- 🧠 **Multi-Agent Council (FINSABER)**: A debate-driven workflow between Bull, Bear, and CIO agents to eliminate bias.
+- 📉 **Bi-Directional Signal Engine**: Supports both **Long and Short** positions with inverted risk management.
+- 🧪 **Walk-Forward Backtesting**: Point-in-time simulation using next-day market open prices to ensure zero data leakage.
+- 👁️ **Multimodal Analysis**: Integrated Vision-Language Models (VLMs) that "see" technical charts like a human analyst.
+- 🤖 **Agent-Ready Architecture**: Built-in support for Gemini CLI and other AI coding agents via `GEMINI.md`.
+
+---
+
+## 🏗️ Architecture: The Council Flow
+The system employs a **Reflective Loop** where agents critique and revise their thesis before a final quantitative decision is made by the CIO.
+
+```mermaid
+graph TD
+    User([User Query]) --> Orchestrator{BeeAI Workflow}
+    Orchestrator --> Tools[OpenBB & yfinance]
+    Tools --> Bull[Bull Agent: Optimistic Case]
+    Tools --> Bear[Bear Agent: Pessimistic Case]
+    Bull & Bear --> VLM[VLM: Chart Analysis]
+    VLM --> Critique[Red Team Critique Loop]
+    Critique --> CIO[CIO: Risk/Reward Gating]
+    CIO --> Final[Final Trade Report: TP/SL/Math]
+```
+
+---
+
+## 📊 Technical Standards
+- **Risk Management**: Automated ATR-based Stop-Loss (SL) and Take-Profit (TP) calculation.
+- **Data Integrity**: Gated fundamentals to prevent "survivorship bias" during backtests.
+- **Execution Strategy**: Simulated next-day open execution for realistic slippage modeling.
+
+---
+
+## 🛠️ Quick Start
+
+### 1. Prerequisites
+- Python 3.11+
+- OpenAI API Key (for GPT-4o Orchestration)
+- OpenBB Personal Access Token (PAT)
+
+### 2. Installation
+```bash
+git clone https://github.com/aarya-pabha/-AI-Stock-Analysis-Chatbot.git
+cd -AI-Stock-Analysis-Chatbot
+python -m venv venv
+source venv/bin/activate  # Windows: .\venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 3. Launch Dashboard
+```bash
+python main.py
+```
+
+---
+
+## 🤖 AI Agent Integration
+This repository is optimized for **AI-Assisted Development**. 
+- **Instructions**: See [GEMINI.md](./GEMINI.md) for architecture rules and build commands.
+- **Memory**: Private context is maintained in the `.gemini/` directory (ignored by git).
+
+---
+
+## 🤝 Contributing
+Contributions are welcome! Please see our `PRD.md` for the technical specification and future roadmap items (e.g., Stage 6: Live Brokerage Integration).
+
+---
+*Disclaimer: This tool is for educational and research purposes only. Trading stocks involves significant risk.*

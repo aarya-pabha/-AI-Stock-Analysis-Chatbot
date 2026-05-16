@@ -1,6 +1,13 @@
 # Use Python 3.11 slim image
 FROM python:3.11-slim
 
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
 # Set up a new user with UID 1000 (required by Hugging Face Spaces)
 RUN useradd -m -u 1000 user
 USER user

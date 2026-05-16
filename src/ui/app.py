@@ -1,7 +1,6 @@
 import gradio as gr
 import os
 import json
-import glob
 from pathlib import Path
 from src.orchestration.schemas import UserContext, AnalystThesis, FinalReport
 from src.orchestration.workflow import create_trading_workflow, TradingState
@@ -76,16 +75,17 @@ def format_summary(report_data: str) -> str:
     except Exception:
         return str(report_data)
 
-async def run_analysis(ticker: str, position: str, risk: str, horizon: str):
+async def run_analysis(ticker: str, position: str, risk: str, horizon: str, progress=gr.Progress()):
     """
     Triggers the BeeAI Orchestration graph to run the Bull, Bear, and CIO agents.
     Yields intermediate states to the Gradio UI for real-time feedback.
     """
     if not ticker or ticker.strip() == "":
-        yield "Error: Ticker cannot be empty.", None, None, None, None
+        yield "Error: Ticker cannot be empty.", None, None, None, None, "🔴 **Error**"
         return
 
     ticker = ticker.strip().upper()
+    progress(0, desc=f"Initializing analysis for {ticker}...")
     
     # Clean up old charts for THIS ticker before starting a new analysis
     cleanup_old_charts(ticker)
@@ -93,6 +93,7 @@ async def run_analysis(ticker: str, position: str, risk: str, horizon: str):
     # Fetch current market price for math-lab accuracy
     import yfinance as yf
     try:
+        progress(0.1, desc="Fetching live market data...")
         tkr = yf.Ticker(ticker)
         # Try to get live price, fallback to last close from history
         curr_price = tkr.info.get("regularMarketPrice")
@@ -111,7 +112,7 @@ async def run_analysis(ticker: str, position: str, risk: str, horizon: str):
              raise ValueError(f"Could not retrieve a valid price for {ticker}")
 
     except Exception as e:
-        yield f"Error fetching price for {ticker}: {e}", None, None, None, None
+        yield f"Error fetching price for {ticker}: {e}", None, None, None, None, "🔴 **Error**"
         return
 
     # 1. Build the UserContext from the UI inputs
@@ -132,7 +133,8 @@ async def run_analysis(ticker: str, position: str, risk: str, horizon: str):
         None, 
         "Awaiting execution...", 
         "Awaiting execution...", 
-        "## 📋 Executive Summary\n*Awaiting execution...*"
+        "## 📋 Executive Summary\n*Awaiting execution...*",
+        f"🟡 **Analyzing {ticker}...**"
     )
     
     try:
@@ -140,18 +142,23 @@ async def run_analysis(ticker: str, position: str, risk: str, horizon: str):
         workflow = create_trading_workflow()
         
         # Step 1: Drafting
+        progress(0.3, desc="Analysts are reviewing charts and drafting theses...")
         yield (
             "Phase 1: Analysts are reviewing charts and fundamental data to draft initial theses...", 
             None, 
             "Awaiting execution...", 
             "Awaiting execution...", 
-            "## 📋 Executive Summary\n*Awaiting execution...*"
+            "## 📋 Executive Summary\n*Awaiting execution...*",
+            f"🟡 **Analysts Drafting: {ticker}**"
         )
+        
+        progress(0.6, desc="Orchestrating multi-agent workflow...")
         response = await workflow.run(state)
         final_state = response.state
         
         # We assume workflow.run completes all steps automatically based on our routing.
         # So we just extract the final state.
+        progress(0.9, desc="Synthesizing final report...")
         
         bull_draft_text = format_thesis(final_state.bull_draft or "N/A")
         bear_draft_text = format_thesis(final_state.bear_draft or "N/A")
@@ -165,16 +172,18 @@ async def run_analysis(ticker: str, position: str, risk: str, horizon: str):
         chart_path = f"data/{ticker}_daily_chart.png"
         image_output = chart_path if os.path.exists(chart_path) else None
 
+        progress(1.0, desc="Done!")
         yield (
             status_msg,
             image_output,
             bull_draft_text,
             bear_draft_text,
-            final_report_text
+            final_report_text,
+            f"✅ **Results Ready for {ticker}**"
         )
         
     except Exception as e:
-        yield f"**Error during execution:** {str(e)}", None, None, None, None
+        yield f"**Error during execution:** {str(e)}", None, None, None, None, "🔴 **System Error**"
 
 def create_ui():
     """Builds the Gradio web interface."""
@@ -210,6 +219,10 @@ def create_ui():
                     inputs=[ticker_input, position_input, risk_input, horizon_input],
                     label="Institutional Presets"
                 )
+                # Loading status area
+                gr.HTML("<br>") # Spacing
+                with gr.Row():
+                    loading_status = gr.Markdown("🟢 **System Ready**", label="Background Status")
 
         # Row 2: Executive Summary (CIO Judgment)
         final_output = gr.Markdown("## 📋 Executive Summary\n*Awaiting execution...*")
@@ -232,7 +245,7 @@ def create_ui():
         submit_btn.click(
             fn=run_analysis,
             inputs=[ticker_input, position_input, risk_input, horizon_input],
-            outputs=[status_box, chart_output, bull_output, bear_output, final_output]
+            outputs=[status_box, chart_output, bull_output, bear_output, final_output, loading_status]
         )
         
     return app

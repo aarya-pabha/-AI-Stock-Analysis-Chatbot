@@ -11,8 +11,8 @@ def main():
     
     app = create_ui()
     
-    # Launch the Gradio app on the default port (7860)
-    app.launch(share=False)
+    # Launch the Gradio app on the default port (7860) for HF Spaces / Docker
+    app.launch(server_name="0.0.0.0", server_port=7860, share=False)
 
 if __name__ == "__main__":
     main()

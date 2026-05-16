@@ -1,0 +1,28 @@
+---
+title: Institutional Trading Chatbot
+emoji: 📈
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
+# AI Stock Analysis Chatbot
+
+An institutional-grade, multi-agent system powered by Gemini 3.1, BeeAI, and OpenBB. Evaluates technicals, fundamentals, and strict quantitative regimes before issuing mathematically derived targets.
+
+## Features (V1.0 - Institutional Grade)
+- **Multimodal Council**: Bull, Bear, and CIO agents debating with Gemini 3.1 Pro/Flash or GPT-4o.
+- **Bi-Directional Engine**: Supports both **Long and Short** equity positions with inverted risk/reward math.
+- **Institutional Backtesting (FINSABER)**:
+    - **Walk-Forward Audit**: Verifies signals against historical next-day open prices. 
+    - **Active Position Tracking**: Prevents trade overlap and enables trailing risk management.
+    - **Point-in-Time Integrity**: Hard-gated tools ensure no data leakage during simulation.
+- **Agentic Reflection Loop**: Agents revise and refine their thesis through a Red Team critique.
+- **Deterministic Math Lab**: Generates exact ATR-based Take-Profit and Stop-Loss targets.
+- **Gradio Dashboard**: Interactive Live Analysis and Walk-Forward Backtesting tabs.    
+
+## Setup
+1. Create a `.env` file with your `OPENAI_API_KEY` and `OPENBB_PAT`.
+2. Run `python main.py` to start the Gradio app.

@@ -22,23 +22,40 @@ The system utilizes a stateful **BeeAI Workflow** to orchestrate specialized age
 
 ```mermaid
 graph TD
-    User([User Query]) --> Orchestrator{BeeAI Workflow}
+    %% Global Entry
+    User([User Query]) --> Orch{BeeAI Orchestrator}
     
-    subgraph "Agentic Reflection Loop"
-        direction LR
-        Bull[<b>Bull Agent</b><br/><i>Momentum, Growth,<br>Insider Buying, Upgrades</i>] <--> |Drafts & Critique| CIO[<b>CIO / Risk Manager</b><br/><i>Regime Check, Liquidity,<br>Risk/Reward Math Lab</i>]
-        Bear[<b>Bear Agent</b><br/><i>Volatility, Risk,<br>Insider Selling, Shorts</i>] <--> |Revision & Judgment| CIO
+    %% Tool Gating
+    Orch --> Tools[(Market Data: OpenBB, yfinance, VLM)]
+    
+    %% Agentic Reflection Loop
+    subgraph Loop [Council Reflection & Decision Loop]
+        direction TB
+        
+        Tools -.-> Bull
+        Tools -.-> Bear
+        
+        Bull[<b>Bull Agent</b><br/><i>Growth & Momentum Tools</i>] -- "Initial Thesis" --> CIO
+        Bear[<b>Bear Agent</b><br/><i>Risk & Volatility Tools</i>] -- "Initial Thesis" --> CIO
+        
+        CIO{<b>CIO Judge</b><br/><i>Regime & Math Lab</i>} -- "Red Team Critique" --> Bull
+        CIO -- "Red Team Critique" --> Bear
+        
+        Bull -. "Revised Thesis" .-> CIO
+        Bear -. "Revised Thesis" .-> CIO
     end
     
-    Tools[OpenBB & yfinance & VLM Chart] -.-> Bull
-    Tools -.-> Bear
-    Tools -.-> CIO
+    %% Final Output
+    Orch --> Loop
+    CIO --> Final[/<b>Final Institutional Report</b><br/><i>TP, SL, Confidence, R:R</i>/]
     
-    CIO --> Final[Final Trade Report: TP/SL/Math]
-    
+    %% Visual Styling
     style CIO fill:#f96,stroke:#333,stroke-width:2px
     style Bull fill:#dfd,stroke:#333
     style Bear fill:#fdd,stroke:#333
+    style Tools fill:#f0f0f0,stroke:#333
+    style Final fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style User fill:#e8f5e9,stroke:#2e7d32
 ```
 
 ---

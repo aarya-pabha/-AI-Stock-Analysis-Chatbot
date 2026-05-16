@@ -24,12 +24,21 @@ The system employs a **Reflective Loop** where agents critique and revise their 
 graph TD
     User([User Query]) --> Orchestrator{BeeAI Workflow}
     Orchestrator --> Tools[OpenBB & yfinance]
-    Tools --> Bull[Bull Agent: Optimistic Case]
-    Tools --> Bear[Bear Agent: Pessimistic Case]
-    Bull & Bear --> VLM[VLM: Chart Analysis]
-    VLM --> Critique[Red Team Critique Loop]
-    Critique --> CIO[CIO: Risk/Reward Gating]
-    CIO --> Final[Final Trade Report: TP/SL/Math]
+    
+    subgraph "Agentic Reflection Loop"
+        Bull[Bull Agent] <--> CIO[CIO / Risk Manager]
+        Bear[Bear Agent] <--> CIO
+    end
+    
+    Tools -.-> Bull
+    Tools -.-> Bear
+    
+    CIO --> Math[ATR Math Lab]
+    Math --> Final[Final Report: Buy/Sell/Hold]
+    
+    style CIO fill:#f96,stroke:#333,stroke-width:2px
+    style Bull fill:#dfd,stroke:#333
+    style Bear fill:#fdd,stroke:#333
 ```
 
 ---
